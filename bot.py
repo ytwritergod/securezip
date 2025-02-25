@@ -8,11 +8,11 @@ from config import API_ID, API_HASH, BOT_TOKEN, OWNER_ID, AUTHORIZED_FILE, MAX_T
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 
-# Initialize
-app = Client("zip_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+# Initialize Pyrogram Client
+app = Client("secure_zip_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 user_data = {}
 
-# ==================== Helper Functions ====================
+# ========================== HELPER FUNCTIONS ==========================
 def format_size(size_bytes):
     """Convert bytes to human-readable format"""
     units = ("B", "KB", "MB", "GB")
@@ -22,7 +22,7 @@ def format_size(size_bytes):
     return f"{round(size_bytes / (1024 ** i), 2)} {units[i]}"
 
 def split_large_file(file_path, chunk_size=2*1024*1024*1024):
-    """Split files larger than 2GB"""
+    """Split files larger than 2GB into parts"""
     part_num = 1
     with open(file_path, 'rb') as f:
         while chunk := f.read(chunk_size):
@@ -45,13 +45,13 @@ def save_authorized_user(user_id: int):
     with open(AUTHORIZED_FILE, 'a') as f:
         f.write(f"{user_id}\n")
 
-# ==================== Security Filters ====================
+# ========================== SECURITY FILTERS ==========================
 async def auth_filter(_, __, message: Message):
     return message.from_user.id in load_authorized_users()
 
 authorized = filters.create(auth_filter)
 
-# ==================== Command Handlers ====================
+# ========================== COMMAND HANDLERS ==========================
 @app.on_message(filters.command("authorise") & filters.user(OWNER_ID) & filters.private)
 async def authorize_user(_, message: Message):
     try:
@@ -84,12 +84,12 @@ async def start_zip_session(_, message: Message):
         "password": None
     }
     await message.reply(
-        f"🔄 Send files (Total ≤ {format_size(MAX_TOTAL_SIZE)}):\n"
+        f"🔄 Send files (Total ≤ {format_size(MAX_TOTAL_SIZE)})\n"
         "Supported: All file types\n"
         "Send /createzip when done"
     )
 
-# ==================== File Handling ====================
+# ========================== FILE HANDLING ==========================
 @app.on_message((filters.document | filters.video | filters.photo) & authorized & filters.private)
 async def handle_files(_, message: Message):
     user_id = message.from_user.id
@@ -97,40 +97,41 @@ async def handle_files(_, message: Message):
         return
 
     try:
-        # Get file info
+        # Get file size
         file_size = message.document.file_size if message.document else \
                    message.video.file_size if message.video else \
                    message.photo.file_size
 
-        # Check total size
+        # Check total size limit
         new_total = user_data[user_id]["total_size"] + file_size
         if new_total > MAX_TOTAL_SIZE:
             await message.reply(f"⚠️ Total size exceeds {format_size(MAX_TOTAL_SIZE)}!")
             return
 
-        # Download file
+        # Get filename
         file_name = message.document.file_name if message.document else \
                    message.video.file_name if message.video else \
                    f"photo_{message.id}.jpg"
 
+        # Download file
         temp_dir = f"temp_{user_id}_{user_data[user_id]['process_id']}"
         os.makedirs(temp_dir, exist_ok=True)
         file_path = await message.download(file_name=os.path.join(temp_dir, file_name))
 
-        # Update data
+        # Update session data
         user_data[user_id]["files"].append(file_path)
         user_data[user_id]["total_size"] = new_total
 
         # Send progress
         await message.reply(
             f"✅ Saved: {file_name}\n"
-            f"📏 Total Size: {format_size(new_total)}"
+            f"📦 Total Size: {format_size(new_total)}"
         )
 
     except Exception as e:
         await message.reply(f"❌ Error: {str(e)}")
 
-# ==================== ZIP Creation ====================
+# ========================== ZIP CREATION ==========================
 @app.on_message(filters.command("createzip") & authorized & filters.private)
 async def zip_menu(_, message: Message):
     buttons = InlineKeyboardMarkup([
@@ -223,7 +224,7 @@ async def create_zip(_, message: Message):
     except Exception as e:
         await message.reply(f"❌ Failed: {str(e)}")
 
-# ==================== Security ====================
+# ========================== SECURITY ==========================
 @app.on_message(filters.private & ~authorized)
 async def block_unauthorized(_, message: Message):
     await message.reply("🔒 Contact owner for access")
