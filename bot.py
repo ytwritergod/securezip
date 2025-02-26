@@ -33,7 +33,7 @@ def format_size(size_bytes):
     i = int(math.floor(math.log(size_bytes, 1024)))
     return f"{round(size_bytes / (1024 ** i), 2)} {units[i]}"
 
-dedef split_large_file(file_path, chunk_size=2*1024*1024*1024):
+dedef split_large_file(file_path, chunk_size=2*1024):
     part_num = 1
     with open(file_path, 'rb') as f:
         while chunk := f.read(chunk_size):
