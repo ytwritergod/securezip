@@ -33,11 +33,12 @@ def format_size(size_bytes):
     i = int(math.floor(math.log(size_bytes, 1024)))
     return f"{round(size_bytes / (1024 ** i), 2)} {units[i]}"
 
-def split_large_file(file_path, chunk_size=2*1024*1024*1024):
+dedef split_large_file(file_path, chunk_size=2*1024*1024*1024):
     part_num = 1
     with open(file_path, 'rb') as f:
         while chunk := f.read(chunk_size):
-            part_name = f"{file_            with open(part_name, 'wb') as chunk_file:
+            part_name = f"{file_path}.part{part_num}"  
+            with open(part_name, 'wb') as chunk_file:
                 chunk_file.write(chunk)
             yield part_name
             part_num += 1
