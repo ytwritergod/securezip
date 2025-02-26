@@ -1,37 +1,30 @@
+import time
+os.environ['TZ'] = 'UTC'  # Set timezone to UTC 
+time.tzset()  # Apply timezone
 import os
 import re
 import math
 import shutil
 import zipfile
-import time
-import ntplib
+import time  # New
 from datetime import datetime
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from config import API_ID, API_HASH, BOT_TOKEN, OWNER_ID, AUTHORIZED_FILE, MAX_TOTAL_SIZE
 
-# ==================== TIME SYNC FIX ====================
-def sync_time():
-    try:
-        ntp_client = ntplib.NTPClient()
-        response = ntp_client.request('pool.ntp.org')
-        return int(response.tx_time - time.time())
-    except:
-        return 0  # Fallback if NTP fails
+# Fix Time Sync Issue
+os.environ['TZ'] = 'UTC'
+time.tzset()
 
-time_offset = sync_time()
-
-# Initialize Pyrogram Client with Time Offset
+# Initialize Client
 app = Client(
-    "filestozipprobot",
-    api_id=API_ID,
-    api_hash=API_HASH,
-    bot_token=BOT_TOKEN,
-    time_offset=time_offset  # Critical Fix for Time Sync
+       "secure_zip_bot",
+       api_id=API_ID,
+       api_hash=API_HASH,
+       bot_token=BOT_TOKEN
 )
 
 user_data = {}
-
 # ==================== HELPER FUNCTIONS ====================
 def format_size(size_bytes):
     units = ("B", "KB", "MB", "GB")
@@ -44,8 +37,7 @@ def split_large_file(file_path, chunk_size=2*1024*1024*1024):
     part_num = 1
     with open(file_path, 'rb') as f:
         while chunk := f.read(chunk_size):
-            part_name = f"{file_path}.part{part_num}"
-            with open(part_name, 'wb') as chunk_file:
+            part_name = f"{file_            with open(part_name, 'wb') as chunk_file:
                 chunk_file.write(chunk)
             yield part_name
             part_num += 1
