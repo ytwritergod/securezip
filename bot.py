@@ -23,7 +23,7 @@ time_offset = sync_time()
 
 # Initialize Pyrogram Client with Time Offset
 app = Client(
-    "secure_zip_bot",
+    "filestozipprobot",
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN,
